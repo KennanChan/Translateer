@@ -5,10 +5,19 @@ const { PUPPETEER_WS_ENDPOINT } = process.env;
 
 export let pagePool: PagePool;
 
+interface QueuedPageRequest {
+  id: string;
+  resolve: (page: Page) => void;
+  reject: (error: Error) => void;
+  time: number;
+  timeout: number;
+}
+
 export default class PagePool {
 	private _pages: Page[] = [];
 	private _pagesInUse: Page[] = [];
 	private _browser!: Browser;
+  private _queue: QueuedPageRequest[] = [];
 
 	constructor(private pageCount: number = 5) {
 		pagePool = this;
@@ -31,6 +40,57 @@ export default class PagePool {
 		return page;
 	}
 
+  public waitForPage(timeout = 30000) {
+    return new Promise<Page | undefined>((resolve, reject) => {
+      const page = this.getPage();
+      if (!page) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const timeoutId = setTimeout(() => {
+          const index = this._queue.findIndex((item) => item.id === id);
+          if (index !== -1) {
+            this._queue.splice(index, 1);
+            reject(new Error("timeout"));
+          }
+        }, timeout);
+        this._queue.push({
+          id,
+          resolve: (page) => {
+            clearTimeout(timeoutId);
+            resolve(page);
+          },
+          reject: (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          time: Date.now(),
+          timeout,
+        });
+      } else {
+        resolve(page);
+      }
+    });
+  }
+
+  private _dequeueRequest(): boolean {
+    if (this._queue.length === 0) return true;
+    const request = this._queue.shift();
+    if (!request) {
+      return false;
+    }
+    if (Date.now() - request.time > request.timeout) {
+      request.reject(new Error("timeout"));
+      return this._dequeueRequest();
+    } else {
+      const page = this.getPage();
+      if (!page) {
+        this._queue.unshift(request);
+        return false;
+      }
+      request.resolve(page);
+    }
+    return true;
+	}
+
 	public releasePage(page: Page) {
 		const index = this._pagesInUse.indexOf(page);
 		if (index === -1) {
@@ -38,6 +98,7 @@ export default class PagePool {
 		}
 		this._pagesInUse.splice(index, 1);
 		this._pages.push(page);
+    this._dequeueRequest();
 	}
 
 	private async _initBrowser() {

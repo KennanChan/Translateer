@@ -28,7 +28,7 @@ const handler = async (request: any, reply: any) => {
 		return;
 	}
 
-	const page = pagePool.getPage();
+	const page = await pagePool.waitForPage();
 	if (!page) {
 		reply
 			.code(400)
