@@ -4,7 +4,6 @@ module.exports = {
       name: "translateer",
       script: "npm",
       args: "run bootstrap",
-      instances: 1,
       autorestart: true,
       watch: false,
       env: {
