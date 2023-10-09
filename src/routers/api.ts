@@ -10,12 +10,22 @@ type Options = {
 	lite: boolean;
 };
 
+function getGoogleLanguageCode(locale: string): string {
+	if (['zh-CN', 'zh-TW'].includes(locale)) {
+		return locale;
+	}
+	return locale.split('-')[0];
+}
+
 const handler = async (request: any, reply: any) => {
 	const options = {
 		...request.query,
 		...request.body,
 	};
-	const { text, from = "auto", to = "zh-CN", lite = false } = options;
+	let { text, from = "auto", to = "zh-CN", lite = false } = options;
+
+	from = getGoogleLanguageCode(from);
+	to = getGoogleLanguageCode(to);
 
 	if (!text) {
 		reply
