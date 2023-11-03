@@ -51,6 +51,8 @@ const handler = async (request: any, reply: any) => {
 		return;
 	}
 
+	await page.reload();
+
 	let response: Record<string, any>;
 	try {
 		const res = await parsePage(page, { text, from, to, lite });
