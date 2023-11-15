@@ -51,7 +51,7 @@ const handler = async (request: any, reply: any) => {
 		return;
 	}
 
-	await page.reload();
+	await page.reload({ waitUntil: "networkidle2" });
 
 	let response: Record<string, any>;
 	try {
