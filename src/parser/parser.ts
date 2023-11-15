@@ -153,6 +153,7 @@ export const parsePage = async (
 
 		if (shouldContinue) {
 			// await network idle first
+			console.log("shouldContinue:", shouldContinue)
 			const xhr = page.waitForResponse((r) => {
 				return r
 					.url()

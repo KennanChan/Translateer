@@ -51,17 +51,13 @@ const handler = async (request: any, reply: any) => {
 		return;
 	}
 
-	await page.reload({ waitUntil: "networkidle2" });
-
 	let response: Record<string, any>;
 	try {
 		const res = await parsePage(page, { text, from, to, lite });
 		response = {
 			result: res.result,
-			pronunciation: res.pronunciation,
 			from: {
 				// iso: res.fromISO,
-				pronunciation: res.fromPronunciation,
 				didYouMean: res.fromDidYouMean,
 				suggestions: res.fromSuggestions,
 			},
